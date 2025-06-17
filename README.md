@@ -116,9 +116,9 @@ POST /expenses
 
 ---
 
-## 🌐 Deployment Instructions
+## 🌐 Deployment Link 
 
-> You can deploy this backend using [Render](https://render.com), [Railway](https://railway.app), or any Node-compatible platform.
+- [Render](https://splitexpenseapp.onrender.com/)
 
 ### 1. Clone the repo
 
@@ -150,9 +150,7 @@ npm run dev
 
 ## 📬 Postman Collection
 
-> A public Postman collection with live demo data and endpoints is recommended.
-
-- 🔗 [Postman Gist (Replace with actual link)](https://gist.github.com/your-postman-gist)
+- 🔗 [Postman Gist](https://gist.github.com/3340f22c325e38c8dcd472b7b07c7a7f.git)
 - Includes:
   - People: Shantanu, Sanket, Om
   - Expenses: Dinner, Groceries, Petrol, Pizza, Movie
@@ -168,14 +166,7 @@ npm run dev
 
 ---
 
-## ✨ Optional Features (Planned)
 
-- [ ] Expense categories (Food, Travel, Utilities)
-- [ ] Monthly analytics (spending charts, summaries)
-- [ ] Recurring bills (rent, subscriptions)
-- [ ] Frontend web UI or React dashboard
-
----
 
 ## 🛠 Tech Stack
 
