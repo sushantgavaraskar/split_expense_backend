@@ -1,0 +1,814 @@
+├─ ./
+│   ├─ .env
+
+│   # --- Begin: .env ---
+MONGO_URI = mongodb+srv://split_app:sushantno111@cluster0.akpgore.mongodb.net/
+PORT = 5000
+│   # --- End: .env ---
+
+│   ├─ package.json
+
+│   # --- Begin: package.json ---
+{
+  "name": "split-app-backend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "joi": "^17.13.3",
+    "mongoose": "^8.16.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}
+
+│   # --- End: package.json ---
+
+│   ├─ project.txt
+
+│   # --- Begin: project.txt ---
+
+│   # --- End: project.txt ---
+
+│   ├─ README.md
+
+│   # --- Begin: README.md ---
+
+# 💸 Split Expense App - Backend
+
+This is the backend system for a Split Expense App, designed to help groups of people split expenses fairly and track who owes whom. Inspired by Splitwise, the system supports expense tracking, settlement calculation, and data validation.
+
+✅ Built with **Node.js, Express, MongoDB, Joi**, and follows modular, RESTful architecture.
+
+---
+
+## 📁 Project Structure
+
+```
+split-expense-backend/
+├── config/
+│   └── db.js
+├── controllers/
+│   ├── expenseController.js
+│   └── settlementController.js
+├── middleware/
+│   ├── errorHandler.js
+│   ├── responseFormatter.js
+│   └── validateRequest.js
+├── models/
+│   └── Expense.js
+├── routes/
+│   ├── expenses.js
+│   └── settlements.js
+├── validators/
+│   └── expenseSchema.js
+├── .env
+├── server.js
+├── package.json
+└── README.md
+```
+
+---
+
+## 🚀 Features
+
+### Core Functionalities
+
+- Add, view, update, and delete expenses
+- Split expenses equally, by percentage, or exact amounts
+- Automatically calculate balances for all users
+- Generate simplified settlements (minimize number of transactions)
+- Derive all people from expense entries
+
+### Validation & Error Handling
+
+- Joi-based request validation
+- Centralized response formatting middleware
+- Proper HTTP status codes (400, 404, 500, etc.)
+- Catch-all route for invalid endpoints
+
+---
+
+## 📡 API Endpoints
+
+### Expense Management
+
+- `GET /expenses` - List all expenses
+- `POST /expenses` - Add a new expense
+- `PUT /expenses/:id` - Update an existing expense
+- `DELETE /expenses/:id` - Delete an expense
+
+### Settlement & Balances
+
+- `GET /people` - List all involved people
+- `GET /balances` - Get current balances per person
+- `GET /settlements` - Generate simplified settlement summary
+
+---
+
+## 🔐 Sample Payloads
+
+### Add Expense
+
+```json
+POST /expenses
+{
+  "amount": 450,
+  "description": "Groceries",
+  "paid_by": "Sanket",
+  "participants": ["Shantanu", "Om"],
+  "split_type": "equal"
+}
+```
+
+### Response Format
+
+```json
+{
+  "success": true,
+  "message": "Expense added successfully",
+  "data": {
+    "_id": "abc123",
+    "amount": 450,
+    "description": "Groceries",
+    ...
+  }
+}
+```
+
+---
+
+## 🧪 Validation Rules
+
+| Field         | Rule                                        |
+|---------------|---------------------------------------------|
+| `amount`      | Required, must be a positive number         |
+| `description` | Required string                             |
+| `paid_by`     | Required string                             |
+| `participants`| Required array with at least 1 participant  |
+| `split_type`  | Must be 'equal', 'percentage', or 'exact'   |
+| `split_values`| Required if type is not 'equal'             |
+
+---
+
+## 🌐 Deployment Instructions
+
+> You can deploy this backend using [Render](https://render.com), [Railway](https://railway.app), or any Node-compatible platform.
+
+### 1. Clone the repo
+
+```bash
+git clone https://github.com/your-username/split-expense-backend.git
+cd split-expense-backend
+```
+
+### 2. Install dependencies
+
+```bash
+npm install
+```
+
+### 3. Create `.env` file
+
+```
+MONGO_URI=<your-mongo-uri>
+PORT=5000
+```
+
+### 4. Run the server
+
+```bash
+npm run dev
+```
+
+---
+
+## 📬 Postman Collection
+
+> A public Postman collection with live demo data and endpoints is recommended.
+
+- 🔗 [Postman Gist (Replace with actual link)](https://gist.github.com/your-postman-gist)
+- Includes:
+  - People: Shantanu, Sanket, Om
+  - Expenses: Dinner, Groceries, Petrol, Pizza, Movie
+  - Edge case tests and settlement scenarios
+
+---
+
+## 🧭 Known Limitations
+
+- Authentication is not implemented (no JWT)
+- No recurring or automated expenses
+- No UI or dashboard (backend only)
+
+---
+
+## ✨ Optional Features (Planned)
+
+- [ ] Expense categories (Food, Travel, Utilities)
+- [ ] Monthly analytics (spending charts, summaries)
+- [ ] Recurring bills (rent, subscriptions)
+- [ ] Frontend web UI or React dashboard
+
+---
+
+## 🛠 Tech Stack
+
+- Backend: Node.js + Express
+- Database: MongoDB Atlas
+- Validation: Joi
+- Testing: Postman
+- Deployment: Render / Railway / Vercel (API)
+
+---
+
+## 👨‍💻 Author
+
+Made with ❤️ by **Sushant Gavaraskar**  
+For **DevDynamics Backend Intern Assignment**
+
+---
+
+## 📄 License
+
+This project is open-source under the [MIT License](LICENSE).
+
+│   # --- End: README.md ---
+
+│   ├─ server.js
+
+│   # --- Begin: server.js ---
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+require('dotenv').config();
+
+// Custom modules
+const connectDB = require('./config/db');
+const expenseRoutes = require('./routes/expenses');
+const settlementRoutes = require('./routes/settlements');
+const analyticsRoutes = require('./routes/analytics');
+const errorHandler = require('./middleware/errorHandler');
+
+const app = express();
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+
+// Connect to DB
+connectDB();
+
+// API Routes
+app.use('/expenses', expenseRoutes);
+app.use('/analytics', analyticsRoutes);
+app.use('/', settlementRoutes); // Put last if it uses base path
+
+// 404 Not Found Handler
+app.use((req, res) => {
+  res.status(404).json({ success: false, message: 'API endpoint not found' });
+});
+
+// Central Error Handler
+app.use(errorHandler);
+
+// Start server
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
+
+│   # --- End: server.js ---
+
+│   ├─ test.py
+
+│   # --- Begin: test.py ---
+import os
+
+def dump_project_to_txt(root_dir, output_file):
+    """
+    Dumps the full file structure and content of all files in the project,
+    excluding only specific heavy/unnecessary folders and specific files.
+    """
+    # Folders to completely ignore (e.g., large or non-code)
+    skip_dirs = {
+        "node_modules", ".git", "__pycache__", "venv",
+        ".idea", ".vscode", "dist", "build", ".mypy_cache"
+    }
+
+    # Specific filenames to ignore (e.g., lockfiles or OS files)
+    skip_files = {
+        "package-lock.json", "yarn.lock", ".DS_Store"
+    }
+
+    with open(output_file, "w", encoding="utf-8") as f:
+        for dirpath, dirnames, filenames in os.walk(root_dir):
+            # Exclude unwanted directories during traversal
+            dirnames[:] = [d for d in dirnames if d not in skip_dirs]
+
+            level = dirpath.replace(root_dir, "").count(os.sep)
+            indent = "│   " * level
+            f.write(f"{indent}├─ {os.path.basename(dirpath)}/\n")
+
+            sub_indent = "│   " * (level + 1)
+            for filename in filenames:
+                if filename in skip_files:
+                    continue
+
+                full_path = os.path.join(dirpath, filename)
+                f.write(f"{sub_indent}├─ {filename}\n")
+
+                try:
+                    with open(full_path, "r", encoding="utf-8") as code_file:
+                        code = code_file.read()
+                        f.write(f"\n{sub_indent}# --- Begin: {filename} ---\n")
+                        f.write(code + "\n")
+                        f.write(f"{sub_indent}# --- End: {filename} ---\n\n")
+                except Exception as e:
+                    f.write(f"{sub_indent}[Could not read {filename}: {e}]\n")
+
+# Example usage
+dump_project_to_txt(".", "project.txt")
+
+│   # --- End: test.py ---
+
+│   ├─ config/
+│   │   ├─ db.js
+
+│   │   # --- Begin: db.js ---
+const mongoose = require('mongoose');
+
+const connectDB = async () => {
+  try {
+    await mongoose.connect(process.env.MONGO_URI);
+    console.log("MongoDB Connected");
+  } catch (err) {
+    console.error("MongoDB Error:", err.message);
+    process.exit(1);
+  }
+};
+
+module.exports = connectDB;
+
+│   │   # --- End: db.js ---
+
+│   ├─ controllers/
+│   │   ├─ analyticsController.js
+
+│   │   # --- Begin: analyticsController.js ---
+const Expense = require('../models/Expense');
+const { successResponse, errorResponse } = require('../middleware/responseFormatter');
+const moment = require('moment');
+
+exports.getMonthlySummary = async (req, res, next) => {
+  try {
+    const expenses = await Expense.find();
+    const summary = {};
+
+    expenses.forEach(exp => {
+      const month = moment(exp.createdAt).format('YYYY-MM');
+      if (!summary[month]) summary[month] = { total: 0, byPerson: {}, byCategory: {} };
+
+      summary[month].total += exp.amount;
+
+      if (!summary[month].byPerson[exp.paid_by]) summary[month].byPerson[exp.paid_by] = 0;
+      summary[month].byPerson[exp.paid_by] += exp.amount;
+
+      if (!summary[month].byCategory[exp.category]) summary[month].byCategory[exp.category] = 0;
+      summary[month].byCategory[exp.category] += exp.amount;
+    });
+
+    return successResponse(res, summary, "Monthly summary generated");
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.getCategorySummary = async (req, res, next) => {
+  try {
+    const expenses = await Expense.find();
+    const summary = {};
+
+    expenses.forEach(exp => {
+      if (!summary[exp.category]) summary[exp.category] = 0;
+      summary[exp.category] += exp.amount;
+    });
+
+    return successResponse(res, summary, "Category summary generated");
+  } catch (err) {
+    next(err);
+  }
+};
+
+│   │   # --- End: analyticsController.js ---
+
+│   │   ├─ expenseController.js
+
+│   │   # --- Begin: expenseController.js ---
+const Expense = require('../models/Expense');
+const { successResponse, errorResponse } = require('../middleware/responseFormatter');
+
+// Normalize helper
+const normalize = (name) => name.trim().toLowerCase();
+
+exports.addExpense = async (req, res, next) => {
+  try {
+    let {
+      amount,
+      description,
+      paid_by,
+      participants,
+      split_type,
+      split_values,
+      category,
+      
+    } = req.body;
+
+    paid_by = normalize(paid_by);
+    participants = participants.map(normalize);
+
+    const expense = new Expense({
+      amount,
+      description,
+      paid_by,
+      participants,
+      split_type,
+      split_values,
+      category,
+      
+    });
+
+    await expense.save();
+    return successResponse(res, expense, "Expense added successfully", 201);
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.getAllExpenses = async (req, res, next) => {
+  try {
+    const expenses = await Expense.find().sort({ createdAt: -1 });
+    return successResponse(res, expenses, "Expenses retrieved successfully");
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.updateExpense = async (req, res, next) => {
+  try {
+    const updateData = {};
+    const fields = [
+      "amount", "description", "split_type", "split_values",
+      "category", "is_recurring", "recurrence"
+    ];
+
+    fields.forEach(field => {
+      if (req.body[field] !== undefined) updateData[field] = req.body[field];
+    });
+
+    if (req.body.paid_by) {
+      updateData.paid_by = normalize(req.body.paid_by);
+    }
+
+    if (req.body.participants) {
+      updateData.participants = req.body.participants.map(normalize);
+    }
+
+    const expense = await Expense.findByIdAndUpdate(req.params.id, updateData, { new: true });
+
+    if (!expense) {
+      return errorResponse(res, "Expense not found", 404);
+    }
+
+    return successResponse(res, expense, "Expense updated successfully");
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.deleteExpense = async (req, res, next) => {
+  try {
+    const expense = await Expense.findByIdAndDelete(req.params.id);
+    if (!expense) return errorResponse(res, "Expense not found", 404);
+
+    return successResponse(res, {}, "Expense deleted successfully");
+  } catch (error) {
+    next(error);
+  }
+};
+
+│   │   # --- End: expenseController.js ---
+
+│   │   ├─ settlementController.js
+
+│   │   # --- Begin: settlementController.js ---
+const Expense = require('../models/Expense');
+const { successResponse, errorResponse } = require('../middleware/responseFormatter');
+
+const normalize = (name) => name.trim().toLowerCase();
+
+exports.getPeople = async (req, res, next) => {
+  try {
+    const expenses = await Expense.find();
+    const peopleSet = new Set();
+
+    expenses.forEach(exp => {
+      peopleSet.add(normalize(exp.paid_by));
+      exp.participants.forEach(p => peopleSet.add(normalize(p)));
+    });
+
+    return successResponse(res, Array.from(peopleSet), "People fetched successfully");
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.getBalances = async (req, res, next) => {
+  try {
+    const expenses = await Expense.find();
+    const balances = {};
+
+    expenses.forEach(exp => {
+      const total = exp.amount;
+      const { paid_by, participants, split_type, split_values } = exp;
+
+      const payer = normalize(paid_by);
+      const part = participants.map(normalize);
+
+      [payer, ...part].forEach(p => {
+        if (!balances[p]) balances[p] = 0;
+      });
+
+      balances[payer] += total;
+
+      if (split_type === 'equal') {
+        const share = total / part.length;
+        part.forEach(p => balances[p] -= share);
+      } else if (split_type === 'percentage') {
+        part.forEach((p, i) => balances[p] -= (split_values[i] / 100) * total);
+      } else if (split_type === 'exact') {
+        part.forEach((p, i) => balances[p] -= split_values[i]);
+      }
+    });
+
+    return successResponse(res, balances, "Balances calculated");
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.getSettlementSummary = async (req, res, next) => {
+  try {
+    const expenses = await Expense.find();
+    const balances = {};
+
+    expenses.forEach(exp => {
+      const total = exp.amount;
+      const { paid_by, participants, split_type, split_values } = exp;
+
+      const payer = normalize(paid_by);
+      const part = participants.map(normalize);
+
+      [payer, ...part].forEach(p => {
+        if (!balances[p]) balances[p] = 0;
+      });
+
+      balances[payer] += total;
+
+      if (split_type === 'equal') {
+        const share = total / part.length;
+        part.forEach(p => balances[p] -= share);
+      } else if (split_type === 'percentage') {
+        part.forEach((p, i) => balances[p] -= (split_values[i] / 100) * total);
+      } else if (split_type === 'exact') {
+        part.forEach((p, i) => balances[p] -= split_values[i]);
+      }
+    });
+
+    const debtors = [], creditors = [];
+
+    Object.entries(balances).forEach(([person, bal]) => {
+      if (bal < -0.01) debtors.push({ person, amount: -bal });
+      else if (bal > 0.01) creditors.push({ person, amount: bal });
+    });
+
+    debtors.sort((a, b) => b.amount - a.amount);
+    creditors.sort((a, b) => b.amount - a.amount);
+
+    const settlements = [];
+
+    while (debtors.length && creditors.length) {
+      const debtor = debtors[0];
+      const creditor = creditors[0];
+
+      const settleAmount = Math.min(debtor.amount, creditor.amount);
+      settlements.push({
+        from: debtor.person,
+        to: creditor.person,
+        amount: parseFloat(settleAmount.toFixed(2))
+      });
+
+      debtor.amount -= settleAmount;
+      creditor.amount -= settleAmount;
+
+      if (debtor.amount < 0.01) debtors.shift();
+      if (creditor.amount < 0.01) creditors.shift();
+    }
+
+    return successResponse(res, settlements, "Settlement summary generated");
+  } catch (error) {
+    next(error);
+  }
+};
+
+│   │   # --- End: settlementController.js ---
+
+│   ├─ middleware/
+│   │   ├─ errorHandler.js
+
+│   │   # --- Begin: errorHandler.js ---
+const errorHandler = (err, req, res, next) => {
+    console.error("", err.stack);
+    const status = err.statusCode || 500;
+  
+    res.status(status).json({
+      success: false,
+      message: err.message || 'Internal Server Error',
+      error: process.env.NODE_ENV === 'development' ? err.stack : undefined,
+    });
+  };
+  
+  module.exports = errorHandler;
+  
+│   │   # --- End: errorHandler.js ---
+
+│   │   ├─ responseFormatter.js
+
+│   │   # --- Begin: responseFormatter.js ---
+exports.successResponse = (res, data = {}, message = "Success", statusCode = 200) => {
+    return res.status(statusCode).json({
+      success: true,
+      message,
+      data,
+    });
+};
+exports.errorResponse = (res, message = "Error", statusCode = 500, error = null) => {
+    return res.status(statusCode).json({
+      success: false,
+      message,
+      error: process.env.NODE_ENV === 'development' ? error : undefined,
+    });
+};
+  
+ 
+│   │   # --- End: responseFormatter.js ---
+
+│   │   ├─ validateRequest.js
+
+│   │   # --- Begin: validateRequest.js ---
+const validateRequest = (schema) => (req, res, next) => {
+    const { error } = schema.validate(req.body, { abortEarly: false });
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        message: "Validation failed",
+        errors: error.details.map((e) => e.message),
+      });
+    }
+    next();
+  };
+  
+  module.exports = validateRequest;
+  
+│   │   # --- End: validateRequest.js ---
+
+│   ├─ models/
+│   │   ├─ Expense.js
+
+│   │   # --- Begin: Expense.js ---
+const mongoose = require('mongoose');
+
+const expenseSchema = new mongoose.Schema({
+  amount: {
+    type: Number,
+    required: true,
+    min: [0, "Amount must be positive"]
+  },
+  description: {
+    type: String,
+    required: [true, "Description is required"]
+  },
+  paid_by: {
+    type: String,
+    required: [true, "Paid By is required"]
+  },
+  participants: {
+    type: [String],
+    required: [true, "At least one participant is required"]
+  },
+  split_type: {
+    type: String,
+    enum: ['equal', 'percentage', 'exact'],
+    default: 'equal'
+  },
+  split_values: {
+    type: [Number],
+    default: []
+  },
+  category: {
+    type: String,
+    enum: ['Food', 'Travel', 'Utilities', 'Entertainment', 'Other'],
+    default: 'Other'
+  },
+ 
+}, { timestamps: true });
+
+module.exports = mongoose.model('Expense', expenseSchema);
+
+│   │   # --- End: Expense.js ---
+
+│   ├─ routes/
+│   │   ├─ analytics.js
+
+│   │   # --- Begin: analytics.js ---
+const express = require('express');
+const router = express.Router();
+const analyticsController = require('../controllers/analyticsController');
+
+router.get('/monthly-summary', analyticsController.getMonthlySummary);
+router.get('/category-summary', analyticsController.getCategorySummary);
+
+module.exports = router;
+
+│   │   # --- End: analytics.js ---
+
+│   │   ├─ expenses.js
+
+│   │   # --- Begin: expenses.js ---
+const express = require('express');
+const router = express.Router();
+const expenseController = require('../controllers/expenseController');
+const validateRequest = require('../middleware/validateRequest');
+const expenseSchema = require('../validators/expenseSchema');
+
+router.post('/', validateRequest(expenseSchema), expenseController.addExpense);
+router.get('/', expenseController.getAllExpenses);
+router.put('/:id', validateRequest(expenseSchema), expenseController.updateExpense);
+router.delete('/:id', expenseController.deleteExpense);
+
+module.exports = router;
+
+│   │   # --- End: expenses.js ---
+
+│   │   ├─ settlements.js
+
+│   │   # --- Begin: settlements.js ---
+const express = require('express');
+const router = express.Router();
+const settlementController = require('../controllers/settlementController');
+
+router.get('/people', settlementController.getPeople);
+router.get('/balances', settlementController.getBalances);
+router.get('/settlements', settlementController.getSettlementSummary);
+
+module.exports = router;
+
+│   │   # --- End: settlements.js ---
+
+│   ├─ validators/
+│   │   ├─ expenseSchema.js
+
+│   │   # --- Begin: expenseSchema.js ---
+const Joi = require('joi');
+
+const expenseSchema = Joi.object({
+  amount: Joi.number().positive().required(),
+  description: Joi.string().required(),
+  paid_by: Joi.string().required(),
+  participants: Joi.array().items(Joi.string()).min(1).required(),
+  split_type: Joi.string().valid('equal', 'percentage', 'exact').required(),
+  split_values: Joi.when('split_type', {
+    is: 'equal',
+    then: Joi.any().optional(),
+    otherwise: Joi.array().items(Joi.number()).required()
+  }),
+  category: Joi.string().valid('Food', 'Travel', 'Utilities', 'Entertainment', 'Other').optional(),
+  is_recurring: Joi.boolean().optional(),
+  recurrence: Joi.string().valid('daily', 'weekly', 'monthly').when('is_recurring', {
+    is: true,
+    then: Joi.required()
+  })
+});
+
+module.exports = expenseSchema;
+
+│   │   # --- End: expenseSchema.js ---
+
