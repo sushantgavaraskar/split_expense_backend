@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: split-expense-backend
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: MONGO_URI
+        value: mongodb+srv://<username>:<password>@cluster0.mongodb.net/splitapp?retryWrites=true&w=majority
+      - key: PORT
+        value: 5000
